@@ -1,79 +1,69 @@
-# Sesi 2: High Performance Computing (HPC)
-**Akselerasi Pemrosesan Paralel Citra Digital Skala Besar untuk Analisis Infrastruktur**
+# Akselerasi Pemrosesan Citra Infrastruktur dengan High Performance Computing (HPC)
 
-## 📖 Deskripsi Studi Kasus
-Dalam skenario riil pemantauan fasilitas publik, inspeksi jalan raya, maupun preservasi bangunan bersejarah, sistem sering kali menerima ratusan hingga ribuan foto udara/citra resolusi tinggi sekaligus. Jika citra-citra ini diproses secara sekuensial (satu per satu pada satu thread CPU), sistem akan mengalami *bottleneck* komputasi berat yang memakan waktu berjam-jam.
+## Deskripsi
 
-Studi kasus ini mensimulasikan penerapan prinsip **High Performance Computing (HPC)** melalui teknik *Multi-Core Parallel Computing*. Kita akan mengolah sekumpulan matriks citra digital untuk ekstraksi pola/fitur kerusakan. Skrip ini secara otomatis mengukur perbandingan waktu eksekusi (*speedup benchmark*) antara eksekusi serial konvensional dan eksekusi paralel yang memanfaatkan seluruh *logical cores* pada unit pemroses.
+Proyek ini merupakan studi kasus penerapan *High Performance Computing* (HPC) melalui teknik *Multi-Core Parallel Processing* untuk mengurai *bottleneck* (kemacetan) komputasi pada pemrosesan data berskala besar.
+Proyek ini diadaptasi dari materi praktisi mengenai arsitektur sistem dan pemrosesan paralel, yang menyoroti pentingnya efisiensi pemanfaatan perangkat keras (*hardware utilization*) sebelum sebuah perusahaan memutuskan untuk membeli *server* yang lebih mahal.
 
-## 🎯 Tujuan Eksekusi
-1. **Pemrosesan Beban Tinggi (Heavy Workload Simulation):** Mensimulasikan ekstraksi fitur dan transformasi matriks citra digital pada setiap file input.
-2. **Implementasi Paralelisasi:** Membagi antrean citra secara merata ke dalam *worker pools* CPU menggunakan modul `multiprocessing`.
-3. **Analisis Performa Empiris:** Mengukur waktu tempuh (*execution time*) dan menghitung faktor percepatan (*speedup factor*) secara objektif.
+## Tujuan
 
-## 💻 Implementasi Kode (Python - Multiprocessing & Time Benchmark)
-Berikut adalah skrip Python yang dapat dijalankan melalui file `parallel_image_processing.py`.
+Tujuan proyek ini adalah:
+1. Memecahkan masalah antrean pemrosesan sekuensial yang memakan waktu lama pada data bervolume besar.
+2. Mengimplementasikan pustaka `multiprocessing` untuk mendistribusikan beban kerja (*workload*) secara merata ke seluruh inti (*core*) CPU.
+3. Membandingkan durasi waktu eksekusi antara pemrosesan konvensional (Serial) dengan pemrosesan paralel (HPC).
+4. Menghasilkan metrik *Speedup Factor* untuk mengevaluasi tingkat efisiensi algoritma komputasi.
 
-```python
-import multiprocessing
-import time
-import numpy as np
+## Studi Kasus
 
-# 1. Simulasi Fungsi Ekstraksi Fitur Citra (Komputasi Intensif Matriks)
-def proses_ekstraksi_citra(id_citra):
-    """
-    Simulasi pemrosesan citra resolusi tinggi (misal: filtering/edge detection)
-    menggunakan matriks acak 2000x2000 piksel.
-    """
-    # Simulasi memuat matriks piksel citra
-    matrix_citra = np.random.randint(0, 256, size=(2000, 2000), dtype=np.uint8)
-    
-    # Simulasi transformasi matematika berat (Filter Gaussian/Deteksi Tepi)
-    hasil_filter = np.sin(matrix_citra) ** 2 + np.cos(matrix_citra) ** 2
-    rata_intensitas = np.mean(hasil_filter)
-    
-    # Menyimulasikan waktu I/O dan kalkulasi
-    time.sleep(0.1)
-    
-    return f"Citra #{id_citra:03d} [Selesai] -> Rata-rata Intensitas: {rata_intensitas:.4f}"
+Sebuah departemen pekerjaan umum (Bina Marga) menerima ratusan citra resolusi tinggi dari *drone* pengawas setiap harinya untuk menganalisis retakan aspal dan kerusakan infrastruktur.
+Aplikasi yang ada saat ini memproses gambar tersebut satu per satu (sekuensial). Akibatnya, sistem sering kali membeku (*hang*) dan laporan harian terlambat rilis. 
+Melalui pendekatan HPC, komputasi matriks gambar akan dipecah dan dikerjakan serentak oleh beberapa *worker* CPU. Efisiensi waktu ini berfungsi sebagai *decision support enabler*, memastikan para insinyur lapangan mendapatkan hasil deteksi kerusakan lebih awal untuk penanganan darurat.
 
-if __name__ == '__main__':
-    # Menyiapkan batch 32 citra infrastruktur yang akan dianalisis
-    daftar_citra = list(range(1, 33))
-    jumlah_core = multiprocessing.cpu_count()
-    
-    print(f"=== BENCHMARK HIGH PERFORMANCE COMPUTING (HPC) ===")
-    print(f"Jumlah Core CPU Terdeteksi: {jumlah_core} Cores\n")
-    
-    # -------------------------------------------------------------
-    # PENGUJIAN 1: Eksekusi Sekuensial (Serial / Non-HPC)
-    # -------------------------------------------------------------
-    print("1. Memulai Eksekusi Sekuensial (Serial)...")
-    mulai_serial = time.time()
-    hasil_serial = []
-    for img_id in daftar_citra:
-        hasil_serial.append(proses_ekstraksi_citra(img_id))
-    durasi_serial = time.time() - mulai_serial
-    print(f"   [SELESAI] Waktu Eksekusi Serial: {durasi_serial:.2f} detik\n")
-    
-    # -------------------------------------------------------------
-    # PENGUJIAN 2: Eksekusi Paralel (HPC Multi-Processing)
-    # -------------------------------------------------------------
-    print(f"2. Memulai Eksekusi Paralel (Multi-Core dengan {jumlah_core} Workers)...")
-    mulai_paralel = time.time()
-    with multiprocessing.Pool(processes=jumlah_core) as pool:
-        hasil_paralel = pool.map(proses_ekstraksi_citra, daftar_citra)
-    durasi_paralel = time.time() - mulai_paralel
-    print(f"   [SELESAI] Waktu Eksekusi Paralel: {durasi_paralel:.2f} detik\n")
-    
-    # -------------------------------------------------------------
-    # HASIL EVALUASI BENCHMARK
-    # -------------------------------------------------------------
-    speedup = durasi_serial / durasi_paralel if durasi_paralel > 0 else 0
-    efisiensi = (speedup / jumlah_core) * 100
-    
-    print("=== KESIMPULAN PERFORMA KOMPUTASI ===")
-    print(f"• Total Citra Diproses : {len(daftar_citra)} File")
-    print(f"• Efisiensi Waktu     : Penghematan {(durasi_serial - durasi_paralel):.2f} detik")
-    print(f"• Speedup Factor     : {speedup:.2f}x lebih cepat dibanding eksekusi serial")
-    print(f"• Efisiensi CPU      : {efisiensi:.1f}%")
+## Dataset & Beban Kerja (Workload)
+
+Karena citra satelit/drone asli berukuran sangat besar, dataset disimulasikan menggunakan Python dan NumPy.
+*   Sistem akan menghasilkan **100 matriks berukuran 2000x2000 piksel** (mensimulasikan 100 gambar beresolusi tinggi).
+*   Pada setiap matriks, akan diaplikasikan operasi matematika trigonometri berulang untuk mensimulasikan beban filter piksel digital (*edge detection* atau transformasi Fourier).
+
+## Metode
+
+Tahapan utama yang dilakukan:
+1. *Workload Simulation* (Pembuatan fungsi beban komputasi CPU murni tanpa jeda I/O).
+2. *Serial Execution* (Eksekusi 100 data menggunakan 1 *core* CPU tunggal).
+3. *Parallel Execution* (Eksekusi 100 data yang dipecah ke seluruh *core* CPU yang tersedia menggunakan `multiprocessing.Pool`).
+4. *Benchmarking & Evaluation* (Pencatatan waktu dan perhitungan metrik performa).
+
+## Evaluasi
+
+Performa algoritma dievaluasi menggunakan metrik komputasi standar:
+*   **Execution Time (detik):** Waktu tempuh total untuk menyelesaikan seluruh antrean data.
+*   **Speedup Factor:** Rasio kecepatan antara eksekusi serial dibandingkan paralel (Serial Time / Parallel Time). Menunjukkan berapa kali lipat sistem menjadi lebih cepat.
+Dalam kasus industri *big data*, *Speedup Factor* merupakan justifikasi teknis (KPI) untuk menilai apakah arsitektur *backend* sudah berjalan secara optimal.
+
+## Teknologi
+
+*   Python
+*   Google Colab / Jupyter Notebook (`.ipynb`)
+*   Pustaka `multiprocessing` (Standard Library)
+*   NumPy
+*   Matplotlib
+*   Seaborn
+
+## Cara Menjalankan
+
+1. Proyek dapat dijalankan menggunakan Google Colab (sangat disarankan agar terlihat spesifikasi CPU server Google).
+2. Buka file `hpc_parallel_processing.ipynb` menggunakan Google Colab.
+3. Jalankan *notebook* dari awal hingga akhir.
+4. *Benchmark* waktu dan grafik perbandingan performa (*Serial vs Parallel*) akan dirender secara otomatis pada *cell* terakhir.
+
+
+## Kesimpulan
+Proyek ini membuktikan bahwa penulisan kode yang efektif sama pentingnya dengan spesifikasi komputer. Pemrosesan konvensional sering kali hanya memanfaatkan sebagian kecil dari kemampuan prosesor modern (meninggalkan core lain dalam status idle).
+Dengan mengadopsi prinsip HPC, pemrosesan citra infrastruktur dapat dipercepat secara signifikan. Dalam konteks mitigasi bencana atau pelaporan publik, kecepatan pemrosesan data ini adalah kunci untuk menghasilkan keputusan yang responsif dan tepat waktu.
+## Struktur Repository
+
+```text
+sesi-2-hpc/
+├── hpc_parallel_processing.ipynb
+├── README.md
+└── requirements.txt
